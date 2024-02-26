@@ -206,24 +206,6 @@ void q_reverseK(struct list_head *head, int k)
     }
     // https://leetcode.com/problems/reverse-nodes-in-k-group/
 }
-
-
-void merge_sort(struct list_head *head)
-{
-    if (!head || list_empty(head) || list_is_singular(head))
-        return;
-    struct list_head *fast = head->next, *slow = head->next;
-    while (fast != head && fast->next != head) {
-        fast = fast->next->next;
-        slow = slow->next;
-    }
-    LIST_HEAD(headtwo);
-    list_cut_position(&headtwo, head, slow->prev);
-    merge_sort(head);
-    merge_sort(&headtwo);
-    mergeLists(head, &headtwo);
-    // return right;
-}
 void mergeLists(struct list_head *L1, struct list_head *L2)
 {
     if (!L1 || !L2)
@@ -241,6 +223,23 @@ void mergeLists(struct list_head *L1, struct list_head *L2)
     if (q_size(L2) != 0) {
         list_splice_tail(L2, L1);
     }
+}
+
+void merge_sort(struct list_head *head)
+{
+    if (!head || list_empty(head) || list_is_singular(head))
+        return;
+    struct list_head *fast = head->next, *slow = head->next;
+    while (fast != head && fast->next != head) {
+        fast = fast->next->next;
+        slow = slow->next;
+    }
+    LIST_HEAD(headtwo);
+    list_cut_position(&headtwo, head, slow->prev);
+    merge_sort(head);
+    merge_sort(&headtwo);
+    mergeLists(head, &headtwo);
+    // return right;
 }
 /* Sort elements of queue in ascending/descending order */
 void q_sort(struct list_head *head, bool descend)

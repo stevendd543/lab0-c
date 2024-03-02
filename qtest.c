@@ -21,8 +21,8 @@
 
 #include "dudect/fixture.h"
 #include "list.h"
+#include "list_sort.h"
 #include "random.h"
-
 /* Shannon entropy */
 extern double shannon_entropy(const uint8_t *input_data);
 extern int show_entropy;
@@ -509,14 +509,22 @@ static bool do_dedup(int argc, char *argv[])
     q_show(3);
     return ok && !error_check();
 }
+int cmp(void *prev, const struct list_head *a, const struct list_head *b)
+{
+    element_t *a_entry = list_entry(a, element_t, list);
+    element_t *b_entry = list_entry(b, element_t, list);
 
+
+    return strcmp(a_entry->value, b_entry->value) < 0 ? 0 : 1;
+
+}
 static bool do_reverse(int argc, char *argv[])
 {
     if (argc != 1) {
         report(1, "%s takes no arguments", argv[0]);
         return false;
     }
-
+    int cnt = 0;
     if (!current || !current->q)
         report(3, "Warning: Calling reverse on null queue");
     error_check();
@@ -529,6 +537,31 @@ static bool do_reverse(int argc, char *argv[])
     set_noallocate_mode(false);
     q_show(3);
     return !error_check();
+
+    bool ok = true;
+    if (current && current->size) {
+        for (struct list_head *cur_l = current->q->next;
+             cur_l != current->q && --cnt; cur_l = cur_l->next) {
+            /* Ensure each element in ascending/descending order */
+            element_t *item, *next_item;
+            item = list_entry(cur_l, element_t, list);
+            next_item = list_entry(cur_l->next, element_t, list);
+            if (!descend && strcmp(item->value, next_item->value) > 0) {
+                report(1, "ERROR: Not sorted in ascending order");
+                ok = false;
+                break;
+            }
+
+            if (descend && strcmp(item->value, next_item->value) < 0) {
+                report(1, "ERROR: Not sorted in descending order");
+                ok = false;
+                break;
+            }
+        }
+    }
+
+    q_show(3);
+    return ok && !error_check();
 }
 
 static bool do_size(int argc, char *argv[])
@@ -579,6 +612,51 @@ static bool do_size(int argc, char *argv[])
     return ok && !error_check();
 }
 
+bool do_lsort(int argc, char *argv[])
+{
+    if (argc != 1) {
+        report(1, "%s take no arguments", argv[0]);
+        return false;
+    }
+    int cnt = 0;
+    if (!current || !current->q)
+        report(1, "%s takes no arguments", argv[0]);
+    else
+        cnt = q_size(current->q);
+    error_check();
+
+    if (cnt < 2)
+        report(3, "Warning: Calling sort on single node");
+    error_check();
+    set_noallocate_mode(true);
+    if (current && exception_setup(true))
+        list_sort(NULL, current->q, cmp);
+    exception_cancel();
+    set_noallocate_mode(false);
+    bool ok = true;
+    if (current && current->size) {
+        for (struct list_head *cur_l = current->q->next;
+             cur_l != current->q && --cnt; cur_l = cur_l->next) {
+            /* Ensure each element in ascending/descending order */
+            element_t *item, *next_item;
+            item = list_entry(cur_l, element_t, list);
+            next_item = list_entry(cur_l->next, element_t, list);
+            if (!descend && strcmp(item->value, next_item->value) > 0) {
+                report(1, "ERROR: Not sorted in ascending order");
+                ok = false;
+                break;
+            }
+
+            if (descend && strcmp(item->value, next_item->value) < 0) {
+                report(1, "ERROR: Not sorted in descending order");
+                ok = false;
+                break;
+            }
+        }
+    }
+    q_show(3);
+    return ok && !error_check();
+}
 bool do_sort(int argc, char *argv[])
 {
     if (argc != 1) {
@@ -602,7 +680,6 @@ bool do_sort(int argc, char *argv[])
         q_sort(current->q, descend);
     exception_cancel();
     set_noallocate_mode(false);
-
     bool ok = true;
     if (current && current->size) {
         for (struct list_head *cur_l = current->q->next;
@@ -1052,6 +1129,8 @@ static void console_init()
                 "");
     ADD_COMMAND(reverseK, "Reverse the nodes of the queue 'K' at a time",
                 "[K]");
+    ADD_COMMAND(lsort, "Sort queue in ascending order provided by linux kernel",
+                "");
     add_param("length", &string_length, "Maximum length of displayed string",
               NULL);
     add_param("malloc", &fail_probability, "Malloc failure probability percent",

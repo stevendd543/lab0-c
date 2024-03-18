@@ -19,10 +19,12 @@
 #include <time.h>
 #endif
 
+
 #include "dudect/fixture.h"
 #include "list.h"
 #include "list_sort.h"
 #include "random.h"
+
 /* Shannon entropy */
 extern double shannon_entropy(const uint8_t *input_data);
 extern int show_entropy;
@@ -63,6 +65,7 @@ typedef struct {
     struct list_head head;
     int size;
 } queue_chain_t;
+
 
 static queue_chain_t chain = {.size = 0};
 static queue_contex_t *current = NULL;
@@ -516,7 +519,6 @@ int cmp(void *prev, const struct list_head *a, const struct list_head *b)
 
 
     return strcmp(a_entry->value, b_entry->value) < 0 ? 0 : 1;
-
 }
 static bool do_reverse(int argc, char *argv[])
 {
@@ -1088,6 +1090,7 @@ static bool do_next(int argc, char *argv[])
 
     return q_show(0);
 }
+
 
 static void console_init()
 {

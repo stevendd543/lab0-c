@@ -28,7 +28,7 @@ static bool prompt_flag = true;
 /* global variables of ttt*/
 static int move_record[N_GRIDS];
 static int move_count = 0;
-
+int play = 1;
 // #ifdef USE_RL
 // #include "agents/reinforcement_learning.h"
 // #elif defined(USE_MCTS)
@@ -369,15 +369,21 @@ static bool do_ttt(int argc, char *argv[])
         } else {
             draw_board(table);
             int move;
-            while (1) {
-                move = get_input(turn);
-                if (table[move] == ' ') {
-                    break;
+            if (play) {
+                while (1) {
+                    move = get_input(turn);
+                    if (table[move] == ' ') {
+                        break;
+                    }
+                    printf("Invalid operation: the position has been marked\n");
                 }
-                printf("Invalid operation: the position has been marked\n");
+            } else {
+                move = mcts(table, turn);
             }
-            table[move] = turn;
-            record_move(move);
+            if (move != -1) {
+                table[move] = turn;
+                record_move(move);
+            }
         }
         turn = turn == 'X' ? 'O' : 'X';
     }
@@ -571,6 +577,7 @@ void init_cmd()
     add_param("error", &err_limit, "Number of errors until exit", NULL);
     add_param("echo", &echo, "Do/don't echo commands", NULL);
     add_param("entropy", &show_entropy, "Show/Hide Shannon entropy", NULL);
+    add_param("game_mode", &play, "Play it youself", NULL);
     ADD_COMMAND(ttt, "Run tic-tac-toe game", "");
 
     init_in();
